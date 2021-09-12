@@ -1,2 +1,0 @@
-docker build -t qbauto .
-docker run -e qbHost=https://qbittorrent.theincrediblemachine.tv:443/ -e qbUser=matthewgholland@gmail.com -e qbPass=Holland@6908D33rw00d -e maxFinishDuration=480 -e maxStartDuration=1440 -e checkFrequency=60 -it --rm --name qbauto qbauto 
