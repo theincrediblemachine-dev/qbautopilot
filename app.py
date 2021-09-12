@@ -23,7 +23,7 @@ maxSeedTime = int(os.getenv('MAX_SEED_TIME',-1))
 
 # Check Properties
 if not qbHost or not qbUser or not qbPass:
-    logging.error(f'Invalid startup properties. Please ensure the following environment variables are configure: (qbHost/qbUser/qbPass)')
+    logging.error(f'Invalid startup properties. Please ensure the following environment variables are configure: (QB_HOST/QB_USER/QB_PASS)')
     time.sleep(5)
     exit()
 
