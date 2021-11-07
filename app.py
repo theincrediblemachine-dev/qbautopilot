@@ -1,5 +1,6 @@
 import os
 import time
+import math
 import datetime
 import logging 
 from dotenv import load_dotenv
@@ -47,7 +48,6 @@ def PurgeTorrents():
     logging.info(f"Detected ({len(torrents)}) torrents ...")
     
     for t in torrents:
-        
         #print(t)
         torrentHash = t['hash']
         torrentName = t['name']
@@ -56,15 +56,25 @@ def PurgeTorrents():
         seedingTime = t['seeding_time']
         seedRatio = t['ratio']
         currentTime = time.time()
-        startDuration = int(datetime.timedelta(seconds=(currentTime - startTime)).total_seconds() // 60)
+        startDuration = ((currentTime - startTime) / 60)
+
+        if debug == 1:
+            logging.info(torrentName)
+            #logging.info(finishTime)
+            #logging.info(t)
+
         if t['amount_left'] == 0:
-            finishDuration = int(datetime.timedelta(seconds=(currentTime - finishTime)).total_seconds() // 60)
+            finishDuration = math.trunc(((finishTime - startTime) / 60))
+            removeTime =  int(datetime.timedelta(seconds=(currentTime - finishTime)).total_seconds() // 60)
+            #logging.info(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(startTime)))
+            #logging.info(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(finishTime)))
         else:
             finishDuration = -1
 
         # Remove Completed Torrents Exceeding Finish Duration
         if (t['amount_left'] == 0) and (finishDuration > maxFinishDuration):
             logging.info(f'Removing completed torrent {torrentName}. Maximum finish duration exceeded ...')
+            logging.info(f'Finish Duration: {finishDuration}, Max Finish Duration: {maxFinishDuration}')
             if debug == 0:
                 qbclient.delete_permanently(torrentHash)
             torrentsProcessed+=1
@@ -72,19 +82,22 @@ def PurgeTorrents():
         # Remove Torrents Exceeding Start
         if (not maxStartDuration == -1) and (startDuration > maxStartDuration):
             logging.info(f'Removing torrent {torrentName}. Maximum start duration exceeded ...')
+            logging.info(f'Finish Duration: {finishDuration}, Max Finish Duration: {maxFinishDuration}')
             if debug == 0:
                 qbclient.delete_permanently(torrentHash)
             torrentsProcessed+=1
 
         # Remove Seeded Torrents
         if (not maxSeedTime == -1) and (seedingTime > maxSeedTime):
-            logging.info(f'Removing seeded torrent {torrentName}. Maximum seed time exceeded ...')
+            logging.info(f'Removing seeded torrent {torrentName}. Maximum seed time exceeded by {maxFinishDuration}- ...')
+            logging.info(f'Finish For {finishDuration}, Max Finish Duration: {maxFinishDuration}')
             if debug == 0:
                 qbclient.delete_permanently(torrentHash)
             torrentsProcessed+=1
 
         if (not maxSeedRatio == -1) and (seedRatio > maxSeedRatio):
             logging.info(f'Removing seeded torrent {torrentName}. Maximum seed ratio ...')
+            logging.info(f'Finish Duration: {finishDuration}, Max Finish Duration: {maxFinishDuration}')            
             if debug == 0:
                 qbclient.delete_permanently(torrentHash)
             torrentsProcessed+=1
@@ -92,6 +105,7 @@ def PurgeTorrents():
         # Remove Stalled Torrents Exceeding Start Duration
         if (not maxStallDuration == -1) and (t['state'] == "stalledDL"):
             logging.info(f"Stalled torrent detected: {t['name']}. Will remove in torrent in {max(0,maxStallDuration-startDuration)} minutes ...")
+            logging.info(f'Finish Duration: {finishDuration}, Max Finish Duration: {maxFinishDuration}')
             if startDuration > maxStallDuration and t['state'] == "stalledDL":
                 logging.info(f'Removing torrent {torrentName}. Maximum stall duration exceeded ...')
                 if debug == 0:
